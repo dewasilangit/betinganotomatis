@@ -2,117 +2,138 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Bet Generator</title>
+<title>Bet Generator Advance</title>
 <style>
-body { font-family: Arial; background:#222; color:#fff; }
-input, button, textarea { padding:6px; margin:4px; }
-textarea { width:100%; height:260px; }
-button { cursor:pointer }
+body{font-family:Arial;background:#222;color:#fff}
+input,button,textarea,select{padding:6px;margin:4px}
+textarea{width:100%;height:280px}
+button{cursor:pointer}
+.box{border:1px solid #444;padding:10px;margin-bottom:10px}
 </style>
 </head>
 <body>
 
-<h3>BET GENERATOR</h3>
+<h3>BET GENERATOR ADVANCE</h3>
 
-Pasaran :
-<input id="pasaran" value="HONGKONG">
+<div class="box">
+Pasaran <input id="pasaran" value="TURIN">
+Periode <input id="periode" value="492">
+</div>
 
-Periode :
-<input id="periode" value="352">
+<div class="box">
+<b>Mode Generate</b><br>
+<input type="radio" name="mode" value="auto" checked> Auto
+<input type="radio" name="mode" value="manual"> Manual
+</div>
 
-<br><br>
+<div class="box">
+<b>Manual Setting</b><br>
+4D Line <input id="l4d" type="number" value="5">
+Nominal <input id="n4d" type="number" value="2300"><br>
+3D Line <input id="l3d" type="number" value="4">
+Nominal <input id="n3d" type="number" value="1000"><br>
+2D Line <input id="l2d" type="number" value="6">
+Nominal <input id="n2d" type="number" value="3500">
+</div>
+
+<div class="box">
+<b>Filter 2D</b><br>
+<select id="twin">
+<option value="any">Bebas</option>
+<option value="twin">Twin</option>
+<option value="notwin">Tidak Twin</option>
+</select>
+</div>
+
+<div class="box">
+Max Total Bayar <input id="maxbayar" type="number" value="30000">
+</div>
+
 <button onclick="generate()">GENERATE</button>
 <button onclick="copyHTML()">COPY</button>
 
 <hr>
-
-<h4>HASIL HTML</h4>
 <textarea id="output"></textarea>
 
 <script>
-function rand(min, max) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
+function rand(min,max){return Math.floor(Math.random()*(max-min+1))+min}
+
+function randomNominal(){return rand(10,50)*100}
+function randomDiskon(){return rand(20,70)+rand(0,9)/10}
+
+function genNumber(len, twin){
+  let a=rand(0,9), b=rand(0,9);
+  if(len==2 && twin==="twin") return ""+a+a;
+  if(len==2 && twin==="notwin"){ while(a==b) b=rand(0,9); return ""+a+b; }
+  let n=""; for(let i=0;i<len;i++) n+=rand(0,9); return n;
 }
 
-function generateNumbers(length, count) {
-  let set = new Set();
-  while (set.size < count) {
-    let num = "";
-    for (let i = 0; i < length; i++) {
-      num += rand(0,9);
-    }
-    set.add(num);
-  }
-  return [...set];
+function genSet(len, count, twin){
+  let s=new Set();
+  while(s.size<count) s.add(genNumber(len,twin));
+  return [...s];
 }
 
-function randomNominal(){
-  return rand(1,30) * 100; // kelipatan 100
-}
-
-function buildRow(label, digit){
-  let lines = rand(1,12);
-  let nominal = randomNominal();
-  let nums = generateNumbers(digit, lines);
-  let bayar = nominal * lines;
-
+function buildRow(label,len,lines,nominal,twin){
+  let nums=genSet(len,lines,twin);
+  let disk=randomDiskon();
+  let bruto=nominal*lines;
+  let netto=Math.round(bruto*(100-disk)/100);
   return {
-    html:`
-<tr>
+    html:`<tr>
 <td align="center">${label}</td>
 <td>${nums.join(" , ")} ,</td>
 <td align="center">@${nominal.toLocaleString()}</td>
-<td align="center">0.00%</td>
-<td align="center">${nominal.toLocaleString()} X ${lines} = ${bayar.toLocaleString()}</td>
+<td align="center">${disk.toFixed(2)}%</td>
+<td align="center">${nominal.toLocaleString()} X ${lines} = ${netto.toLocaleString()}</td>
 </tr>`,
-    total: bayar
+    total:netto
   }
 }
 
-function generate() {
-  let pasaran = document.getElementById("pasaran").value;
-  let periode = document.getElementById("periode").value;
+function generate(){
+  let mode=document.querySelector("input[name=mode]:checked").value;
+  let max=parseInt(maxbayar.value);
 
-  let r4 = buildRow("4D",4);
-  let r3 = buildRow("3D",3);
-  let r2 = buildRow("2D",2);
+  let attempt=0;
+  while(attempt<50){
+    let l4,l3,l2,n4,n3,n2;
+    if(mode==="auto"){
+      l4=rand(1,12); l3=rand(1,12); l2=rand(1,12);
+      n4=randomNominal(); n3=randomNominal(); n2=randomNominal();
+    }else{
+      l4=+l4d.value; l3=+l3d.value; l2=+l2d.value;
+      n4=+n4d.value; n3=+n3d.value; n2=+n2d.value;
+    }
 
-  let total = r4.total + r3.total + r2.total;
+    let r4=buildRow("4D",4,l4,n4,"any");
+    let r3=buildRow("3D",3,l3,n3,"any");
+    let r2=buildRow("2D",2,l2,n2,twin.value);
+    let total=r4.total+r3.total+r2.total;
 
-  let html = `
+    if(total<=max){
+      output.value=`
 <div class="panel-">
 <h4 class="color-white">
 Bet Sukses!!
-<font color="orange">Periode ${periode} - ${pasaran}</font>
+<font color="orange">Periode ${periode.value} - ${pasaran.value}</font>
 </h4>
-
-<table class="history" border="1" cellpadding="6" cellspacing="0">
-<thead>
-<tr>
-<th>No</th><th>Tebakan</th><th>Taruhan</th><th>Diskon</th><th>Bayar</th>
-</tr>
-</thead>
-<tbody>
-${r4.html}
-${r3.html}
-${r2.html}
-<tr>
-<td colspan="4" align="center">Total Bayar Pemain :</td>
-<td>${total.toLocaleString()}</td>
-</tr>
-</tbody>
-</table>
-</div>
-`;
-
-  document.getElementById("output").value = html.trim();
+<table class="history">
+<tr><th>No</th><th>Tebakan</th><th>Taruhan</th><th>Diskon</th><th>Bayar</th></tr>
+${r4.html}${r3.html}${r2.html}
+<tr><td colspan="4" align="center">Total Bayar Pemain :</td><td>${total.toLocaleString()}</td></tr>
+</table></div>`.trim();
+      return;
+    }
+    attempt++;
+  }
+  alert("Gagal menemukan kombinasi sesuai max bayar");
 }
 
 function copyHTML(){
-  let out = document.getElementById("output");
-  out.select();
+  output.select();
   document.execCommand("copy");
-  alert("Hasil berhasil di copy");
+  alert("Hasil di copy");
 }
 </script>
 
