@@ -1,150 +1,117 @@
 <!DOCTYPE html>
-<html lang="id">
+<html>
 <head>
 <meta charset="UTF-8">
-<title>Generator Bet Premium</title>
+<title>Bet Generator</title>
 <style>
-*{box-sizing:border-box}
-body{
-  margin:0;
-  background:#0b0f19;
-  color:#fff;
-  font-family:'Segoe UI',sans-serif;
-}
-.container{
-  max-width:1100px;
-  margin:40px auto;
-  padding:20px;
-}
-.card{
-  background:#12182a;
-  border-radius:14px;
-  padding:20px;
-  box-shadow:0 10px 30px rgba(0,0,0,.4);
-}
-.header{
-  text-align:center;
-  margin-bottom:20px;
-}
-.header span{
-  color:orange;
-}
-.controls{
-  display:flex;
-  gap:10px;
-  margin-bottom:15px;
-  flex-wrap:wrap;
-}
-input{
-  padding:10px;
-  border-radius:8px;
-  border:none;
-  width:150px;
-}
-button{
-  padding:10px 18px;
-  border:none;
-  border-radius:8px;
-  cursor:pointer;
-  font-weight:600;
-}
-.generate{background:#4f7cff;color:white}
-.copy{background:#16a34a;color:white}
-table{
-  width:100%;
-  border-collapse:collapse;
-  margin-top:15px;
-}
-th,td{
-  padding:10px;
-  border-bottom:1px solid #2a3150;
-  text-align:center;
-}
-th{
-  color:#9aa4ff;
-}
-.total{
-  font-weight:bold;
-  background:#0e1430;
-}
-@media(max-width:600px){
-  table{font-size:12px}
-}
+body { font-family: Arial; background:#222; color:#fff; }
+input, button, textarea { padding:6px; margin:4px; }
+textarea { width:100%; height:260px; }
+button { cursor:pointer }
 </style>
 </head>
 <body>
 
-<div class="container">
-  <div class="card">
-    <div class="header">
-      <h2>Bet Sukses!!</h2>
-      <span>Periode 352 - HONGKONG</span>
-    </div>
+<h3>BET GENERATOR</h3>
 
-    <div class="controls">
-      <input type="number" id="nominal" value="100" step="100" min="100">
-      <button class="generate" onclick="generate()">Generate</button>
-      <button class="copy" onclick="copyResult()">Copy</button>
-    </div>
+Pasaran :
+<input id="pasaran" value="HONGKONG">
 
-    <div id="result"></div>
-  </div>
-</div>
+Periode :
+<input id="periode" value="352">
+
+<br><br>
+<button onclick="generate()">GENERATE</button>
+<button onclick="copyHTML()">COPY</button>
+
+<hr>
+
+<h4>HASIL HTML</h4>
+<textarea id="output"></textarea>
 
 <script>
-function rand(len){
-  return Math.floor(Math.random()*10**len).toString().padStart(len,'0');
+function rand(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-function row(label,digit,nominal){
-  let lines=Math.floor(Math.random()*12)+1;
-  let nums=[];
-  for(let i=0;i<lines;i++) nums.push(rand(digit));
-  let bayar=nominal*lines;
+function generateNumbers(length, count) {
+  let set = new Set();
+  while (set.size < count) {
+    let num = "";
+    for (let i = 0; i < length; i++) {
+      num += rand(0,9);
+    }
+    set.add(num);
+  }
+  return [...set];
+}
+
+function randomNominal(){
+  return rand(1,30) * 100; // kelipatan 100
+}
+
+function buildRow(label, digit){
+  let lines = rand(1,12);
+  let nominal = randomNominal();
+  let nums = generateNumbers(digit, lines);
+  let bayar = nominal * lines;
+
   return {
     html:`
-    <tr>
-      <td>${label}</td>
-      <td>${nums.join(" , ")} ,</td>
-      <td>@${nominal}</td>
-      <td>0%</td>
-      <td>${nominal} × ${lines} = ${bayar}</td>
-    </tr>`,
-    total:bayar
+<tr>
+<td align="center">${label}</td>
+<td>${nums.join(" , ")} ,</td>
+<td align="center">@${nominal.toLocaleString()}</td>
+<td align="center">0.00%</td>
+<td align="center">${nominal.toLocaleString()} X ${lines} = ${bayar.toLocaleString()}</td>
+</tr>`,
+    total: bayar
   }
 }
 
-function generate(){
-  let nominal=parseInt(document.getElementById("nominal").value);
-  if(nominal%100!==0){
-    alert("Nominal harus kelipatan 100");
-    return;
-  }
+function generate() {
+  let pasaran = document.getElementById("pasaran").value;
+  let periode = document.getElementById("periode").value;
 
-  let t=0;
-  let r4=row("4D",4,nominal); t+=r4.total;
-  let r3=row("3D",3,nominal); t+=r3.total;
-  let r2=row("2D",2,nominal); t+=r2.total;
+  let r4 = buildRow("4D",4);
+  let r3 = buildRow("3D",3);
+  let r2 = buildRow("2D",2);
 
-  document.getElementById("result").innerHTML=`
-  <table>
-    <tr>
-      <th>No</th><th>Tebakan</th><th>Taruhan</th><th>Diskon</th><th>Bayar</th>
-    </tr>
-    ${r4.html}
-    ${r3.html}
-    ${r2.html}
-    <tr class="total">
-      <td colspan="4">Total Bayar Pemain</td>
-      <td>${t}</td>
-    </tr>
-  </table>`;
+  let total = r4.total + r3.total + r2.total;
+
+  let html = `
+<div class="panel-">
+<h4 class="color-white">
+Bet Sukses!!
+<font color="orange">Periode ${periode} - ${pasaran}</font>
+</h4>
+
+<table class="history" border="1" cellpadding="6" cellspacing="0">
+<thead>
+<tr>
+<th>No</th><th>Tebakan</th><th>Taruhan</th><th>Diskon</th><th>Bayar</th>
+</tr>
+</thead>
+<tbody>
+${r4.html}
+${r3.html}
+${r2.html}
+<tr>
+<td colspan="4" align="center">Total Bayar Pemain :</td>
+<td>${total.toLocaleString()}</td>
+</tr>
+</tbody>
+</table>
+</div>
+`;
+
+  document.getElementById("output").value = html.trim();
 }
 
-function copyResult(){
-  navigator.clipboard.writeText(
-    document.getElementById("result").innerText
-  );
+function copyHTML(){
+  let out = document.getElementById("output");
+  out.select();
+  document.execCommand("copy");
   alert("Hasil berhasil di copy");
 }
 </script>
