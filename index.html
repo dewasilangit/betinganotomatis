@@ -159,38 +159,39 @@ function makeRow(label,len,line,nom){
 
 /* ================= GENERATE ================= */
 function generate(){
+
+  // VALIDASI PERIODE
   let per = periode.value.trim();
+  if(per === "" || per === "0000"){
+    alert("Periode belum diganti, cek lagi!");
+    periode.focus();
+    return;
+  }
 
-if(per === "" || per === "0000"){
-  alert("Periode belum diganti, cek lagi!");
-  periode.focus();
-  return;
-}
-  let pas=getPasaran();
-  let per=periode.value;
-  let rows=[],total=0;
+  let pas = getPasaran();
+  let rows = [], total = 0;
 
-  if(mode.value==="auto"){
-    let max=+maxTotal.value;
+  if(mode.value === "auto"){
+    let max = +maxTotal.value;
     for(let i=0;i<1000;i++){
-      let r4=makeRow("4D",4,rand(3,12),rand(1,30)*100);
-      let r3=makeRow("3D",3,rand(3,12),rand(1,30)*100);
-      let r2=makeRow("2D",2,rand(3,12),rand(1,30)*100);
-      total=r4.total+r3.total+r2.total;
-      if(total<=max){
-        rows=[r4.html,r3.html,r2.html];
+      let r4 = makeRow("4D",4,rand(3,12),rand(1,30)*100);
+      let r3 = makeRow("3D",3,rand(3,12),rand(1,30)*100);
+      let r2 = makeRow("2D",2,rand(3,12),rand(1,30)*100);
+      total = r4.total + r3.total + r2.total;
+      if(total <= max){
+        rows = [r4.html, r3.html, r2.html];
         break;
       }
     }
-  }else{
-    let r4=makeRow("4D",4,+j4d.value,+n4d.value);
-    let r3=makeRow("3D",3,+j3d.value,+n3d.value);
-    let r2=makeRow("2D",2,+j2d.value,+n2d.value);
-    total=r4.total+r3.total+r2.total;
-    rows=[r4.html,r3.html,r2.html];
+  } else {
+    let r4 = makeRow("4D",4,+j4d.value,+n4d.value);
+    let r3 = makeRow("3D",3,+j3d.value,+n3d.value);
+    let r2 = makeRow("2D",2,+j2d.value,+n2d.value);
+    total = r4.total + r3.total + r2.total;
+    rows = [r4.html, r3.html, r2.html];
   }
 
-  output.value=`
+  output.value = `
 <div class="panel-">
 <h4 class="color-white">
 Bet Sukses!!
@@ -228,6 +229,7 @@ toggleManual();
 
 </body>
 </html>
+
 
 
 
