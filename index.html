@@ -68,10 +68,19 @@ Nominal <input id="n2d" type="number" value="100">
 <div id="autoBox">
 <hr>
 Max Total Bayar
-<input id="maxTotal" type="number" value="50000"
+<input id="maxTotal" type="number" value="30000"
 step="5000" min="5000" oninput="formatMaxTotal()">
-</div>
 
+function formatMaxTotal(){
+  let el = document.getElementById("maxTotal");
+  let v = el.value;
+
+  if(v < 1000){
+    el.value = v * 1000;
+  }else{
+    el.value = Math.round(v / 5000) * 5000;
+  }
+}
 <br>
 <button onclick="generate()">GENERATE</button>
 <button onclick="copyHTML()">COPY</button>
@@ -193,14 +202,6 @@ toggleManual();
 
 </body>
 </html>
-function formatMaxTotal(){
-  let el = document.getElementById("maxTotal");
-  let v = el.value;
 
-  if(v < 1000){
-    el.value = v * 1000;
-  }else{
-    el.value = Math.round(v / 5000) * 5000;
-  }
-}
+
 
