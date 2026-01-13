@@ -148,7 +148,7 @@ function makeRow(label,len,line,nom){
     html:`
 <tr>
 <td align="center">${label}</td>
-<td>${nums.join(" , ")}</td>
+<td>${nums.join(" , ")} ,</td>
 <td align="center">@${nom.toLocaleString()}</td>
 <td align="center">0.00%</td>
 <td align="center">${nom.toLocaleString()} X ${line} = ${bayar.toLocaleString()}</td>
@@ -221,5 +221,6 @@ toggleManual();
 
 </body>
 </html>
+
 
 
