@@ -4,10 +4,11 @@
 <meta charset="UTF-8">
 <title>Bet Generator</title>
 <style>
-body { font-family: Arial; background:#222; color:#fff; }
-input, button, textarea { padding:6px; margin:4px; }
-textarea { width:100%; height:260px; }
-button { cursor:pointer }
+body{font-family:Arial;background:#222;color:#fff}
+input,select,button,textarea{padding:6px;margin:4px}
+textarea{width:100%;height:260px}
+button{cursor:pointer}
+.manual{display:none}
 </style>
 </head>
 <body>
@@ -15,105 +16,175 @@ button { cursor:pointer }
 <h3>BET GENERATOR</h3>
 
 Pasaran :
-<input id="pasaran" value="HONGKONG">
+<b id="pasaranText">SYDNEY</b>
 
+&nbsp;&nbsp;
 Periode :
 <input id="periode" value="352">
 
 <br><br>
+
+Mode :
+<select id="mode" onchange="toggleManual()">
+  <option value="auto">OTOMATIS</option>
+  <option value="manual">MANUAL</option>
+</select>
+
+Filter Nomor :
+<select id="filter">
+  <option value="mix">Acak</option>
+  <option value="twin">Twin</option>
+  <option value="notwin">Non Twin</option>
+</select>
+
+<div class="manual" id="manualBox">
+<hr>
+4D Line <input id="j4d" type="number" value="3">
+Nominal <input id="n4d" type="number" value="100"><br>
+
+3D Line <input id="j3d" type="number" value="3">
+Nominal <input id="n3d" type="number" value="100"><br>
+
+2D Line <input id="j2d" type="number" value="3">
+Nominal <input id="n2d" type="number" value="100">
+</div>
+
+<div id="autoBox">
+<hr>
+Max Total Bayar
+<input id="maxTotal" type="number" value="50000">
+</div>
+
+<br>
 <button onclick="generate()">GENERATE</button>
 <button onclick="copyHTML()">COPY</button>
 
 <hr>
-
-<h4>HASIL HTML</h4>
 <textarea id="output"></textarea>
 
 <script>
-function rand(min, max) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
+// ===== PRESET PASARAN OTOMATIS =====
+const pasaranList = [
+  "SYDNEY",
+  "GUANGDONG",
+  "SINGAPORE",
+  "JEJULOTTO",
+  "HONGKONG",
+  "MONACO",
+  "TURIN"
+];
+let pasaranIndex = 0;
+
+// ===== UI =====
+function toggleManual(){
+  let manual = mode.value === "manual";
+  manualBox.style.display = manual ? "block" : "none";
+  autoBox.style.display = manual ? "none" : "block";
 }
 
-function generateNumbers(length, count) {
-  let set = new Set();
-  while (set.size < count) {
-    let num = "";
-    for (let i = 0; i < length; i++) {
-      num += rand(0,9);
-    }
-    set.add(num);
+// ===== RANDOM & FILTER =====
+function rand(min,max){return Math.floor(Math.random()*(max-min+1))+min}
+
+function isTwin(num){return /^(\d)\1+$/.test(num)}
+
+function genNumber(len,filter){
+  while(true){
+    let n="";
+    for(let i=0;i<len;i++) n+=rand(0,9);
+    if(filter==="twin" && !isTwin(n)) continue;
+    if(filter==="notwin" && isTwin(n)) continue;
+    return n;
   }
-  return [...set];
 }
 
-function randomNominal(){
-  return rand(1,30) * 100; // kelipatan 100
+function genSet(len,count,filter){
+  let s=new Set();
+  while(s.size<count) s.add(genNumber(len,filter));
+  return [...s];
 }
 
-function buildRow(label, digit){
-  let lines = rand(1,12);
-  let nominal = randomNominal();
-  let nums = generateNumbers(digit, lines);
-  let bayar = nominal * lines;
-
-  return {
-    html:`
+// ===== BUILD ROW =====
+function rowHTML(label,nums,nom,line,bayar){
+  return `
 <tr>
 <td align="center">${label}</td>
 <td>${nums.join(" , ")} ,</td>
-<td align="center">@${nominal.toLocaleString()}</td>
+<td align="center">@${nom.toLocaleString()}</td>
 <td align="center">0.00%</td>
-<td align="center">${nominal.toLocaleString()} X ${lines} = ${bayar.toLocaleString()}</td>
-</tr>`,
-    total: bayar
-  }
+<td align="center">${nom.toLocaleString()} X ${line} = ${bayar.toLocaleString()}</td>
+</tr>`;
 }
 
-function generate() {
-  let pasaran = document.getElementById("pasaran").value;
-  let periode = document.getElementById("periode").value;
+function buildAuto(label,len){
+  let line=rand(3,12);
+  let nom=rand(1,30)*100;
+  let nums=genSet(len,line,filter.value);
+  let bayar=nom*line;
+  return {html:rowHTML(label,nums,nom,line,bayar),total:bayar};
+}
 
-  let r4 = buildRow("4D",4);
-  let r3 = buildRow("3D",3);
-  let r2 = buildRow("2D",2);
+function buildManual(label,len,j,n){
+  let nums=genSet(len,j,filter.value);
+  let bayar=n*j;
+  return {html:rowHTML(label,nums,n,j,bayar),total:bayar};
+}
 
-  let total = r4.total + r3.total + r2.total;
+// ===== GENERATE =====
+function generate(){
+  // ganti pasaran otomatis
+  let pasaran = pasaranList[pasaranIndex];
+  pasaranText.innerText = pasaran;
+  pasaranIndex = (pasaranIndex + 1) % pasaranList.length;
 
-  let html = `
+  let per = periode.value;
+  let rows=[], total=0;
+
+  if(mode.value==="auto"){
+    let max=+maxTotal.value;
+    while(true){
+      let r4=buildAuto("4D",4);
+      let r3=buildAuto("3D",3);
+      let r2=buildAuto("2D",2);
+      total=r4.total+r3.total+r2.total;
+      if(total<=max){
+        rows=[r4.html,r3.html,r2.html];
+        break;
+      }
+    }
+  }else{
+    let r4=buildManual("4D",4,+j4d.value,+n4d.value);
+    let r3=buildManual("3D",3,+j3d.value,+n3d.value);
+    let r2=buildManual("2D",2,+j2d.value,+n2d.value);
+    total=r4.total+r3.total+r2.total;
+    rows=[r4.html,r3.html,r2.html];
+  }
+
+  output.value=`
 <div class="panel-">
 <h4 class="color-white">
 Bet Sukses!!
-<font color="orange">Periode ${periode} - ${pasaran}</font>
+<font color="orange">Periode ${per} - ${pasaran}</font>
 </h4>
-
-<table class="history" border="1" cellpadding="6" cellspacing="0">
-<thead>
-<tr>
-<th>No</th><th>Tebakan</th><th>Taruhan</th><th>Diskon</th><th>Bayar</th>
-</tr>
-</thead>
-<tbody>
-${r4.html}
-${r3.html}
-${r2.html}
+<table class="history">
+<tr><th>No</th><th>Tebakan</th><th>Taruhan</th><th>Diskon</th><th>Bayar</th></tr>
+${rows.join("")}
 <tr>
 <td colspan="4" align="center">Total Bayar Pemain :</td>
 <td>${total.toLocaleString()}</td>
 </tr>
-</tbody>
 </table>
 </div>
-`;
-
-  document.getElementById("output").value = html.trim();
+`.trim();
 }
 
+// ===== COPY =====
 function copyHTML(){
-  let out = document.getElementById("output");
-  out.select();
+  output.select();
   document.execCommand("copy");
   alert("Hasil berhasil di copy");
 }
+
+toggleManual();
 </script>
 
 </body>
