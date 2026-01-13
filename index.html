@@ -8,23 +8,38 @@ body{font-family:Arial;background:#222;color:#fff}
 input,select,button,textarea{padding:6px;margin:4px}
 textarea{width:100%;height:260px}
 button{cursor:pointer}
-.manual{display:none}
+.manual,.presetBox{display:none}
 </style>
 </head>
 <body>
 
 <h3>BET GENERATOR</h3>
 
-Pasaran :
-<b id="pasaranText">SYDNEY</b>
-
-&nbsp;&nbsp;
 Periode :
 <input id="periode" value="352">
 
 <br><br>
 
-Mode :
+Pasaran Mode :
+<select id="presetMode" onchange="togglePreset()">
+  <option value="on">PRESET ON</option>
+  <option value="off">MANUAL</option>
+</select>
+
+<div id="manualPasaran">
+  Pasaran :
+  <input id="pasaranManual" value="HONGKONG">
+</div>
+
+<div class="presetBox" id="presetBox">
+Preset Pasaran (pisahkan dengan koma):<br>
+<input id="customPreset" style="width:90%"
+value="SYDNEY,GUANGDONG,SINGAPORE,JEJULOTTO,HONGKONG,MONACO,TURIN">
+</div>
+
+<hr>
+
+Mode Bet :
 <select id="mode" onchange="toggleManual()">
   <option value="auto">OTOMATIS</option>
   <option value="manual">MANUAL</option>
@@ -35,6 +50,7 @@ Filter Nomor :
   <option value="mix">Acak</option>
   <option value="twin">Twin</option>
   <option value="notwin">Non Twin</option>
+  <option value="notwin_strict">Non Twin Ketat</option>
 </select>
 
 <div class="manual" id="manualBox">
@@ -63,98 +79,89 @@ Max Total Bayar
 <textarea id="output"></textarea>
 
 <script>
-// ===== PRESET PASARAN OTOMATIS =====
-const pasaranList = [
-  "SYDNEY",
-  "GUANGDONG",
-  "SINGAPORE",
-  "JEJULOTTO",
-  "HONGKONG",
-  "MONACO",
-  "TURIN"
-];
-let pasaranIndex = 0;
+// ===== PRESET PASARAN =====
+let presetIndex=0;
+function togglePreset(){
+  let on=presetMode.value==="on";
+  presetBox.style.display=on?"block":"none";
+  manualPasaran.style.display=on?"none":"block";
+}
+function getPasaran(){
+  if(presetMode.value==="off") return pasaranManual.value;
+  let list=customPreset.value.split(",").map(p=>p.trim()).filter(p=>p);
+  if(!list.length) return "UNKNOWN";
+  let p=list[presetIndex];
+  presetIndex=(presetIndex+1)%list.length;
+  return p;
+}
 
 // ===== UI =====
 function toggleManual(){
-  let manual = mode.value === "manual";
-  manualBox.style.display = manual ? "block" : "none";
-  autoBox.style.display = manual ? "none" : "block";
+  let m=mode.value==="manual";
+  manualBox.style.display=m?"block":"none";
+  autoBox.style.display=m?"none":"block";
 }
 
-// ===== RANDOM & FILTER =====
+// ===== RANDOM =====
 function rand(min,max){return Math.floor(Math.random()*(max-min+1))+min}
+function isTwin(n){return /^(\d)\1+$/.test(n)}
+function isStrictNonTwin(n){return new Set(n.split("")).size===n.length}
 
-function isTwin(num){return /^(\d)\1+$/.test(num)}
-
-function genNumber(len,filter){
+function genNum(len,f){
   while(true){
     let n="";
     for(let i=0;i<len;i++) n+=rand(0,9);
-    if(filter==="twin" && !isTwin(n)) continue;
-    if(filter==="notwin" && isTwin(n)) continue;
+    if(f==="twin" && !isTwin(n)) continue;
+    if(f==="notwin" && isTwin(n)) continue;
+    if(f==="notwin_strict" && !isStrictNonTwin(n)) continue;
     return n;
   }
 }
-
-function genSet(len,count,filter){
+function genSet(len,c,f){
   let s=new Set();
-  while(s.size<count) s.add(genNumber(len,filter));
+  while(s.size<c) s.add(genNum(len,f));
   return [...s];
 }
 
-// ===== BUILD ROW =====
-function rowHTML(label,nums,nom,line,bayar){
-  return `
-<tr>
+// ===== ROW =====
+function row(label,nums,nom,line){
+  let bayar=nom*line;
+  return {
+    html:`<tr>
 <td align="center">${label}</td>
 <td>${nums.join(" , ")} ,</td>
 <td align="center">@${nom.toLocaleString()}</td>
 <td align="center">0.00%</td>
 <td align="center">${nom.toLocaleString()} X ${line} = ${bayar.toLocaleString()}</td>
-</tr>`;
+</tr>`,
+    total:bayar
+  };
 }
-
-function buildAuto(label,len){
+function autoRow(label,len){
   let line=rand(3,12);
   let nom=rand(1,30)*100;
-  let nums=genSet(len,line,filter.value);
-  let bayar=nom*line;
-  return {html:rowHTML(label,nums,nom,line,bayar),total:bayar};
-}
-
-function buildManual(label,len,j,n){
-  let nums=genSet(len,j,filter.value);
-  let bayar=n*j;
-  return {html:rowHTML(label,nums,n,j,bayar),total:bayar};
+  return row(label,genSet(len,line,filter.value),nom,line);
 }
 
 // ===== GENERATE =====
 function generate(){
-  // ganti pasaran otomatis
-  let pasaran = pasaranList[pasaranIndex];
-  pasaranText.innerText = pasaran;
-  pasaranIndex = (pasaranIndex + 1) % pasaranList.length;
-
-  let per = periode.value;
-  let rows=[], total=0;
+  let pas=getPasaran();
+  let per=periode.value;
+  let rows=[],total=0;
 
   if(mode.value==="auto"){
     let max=+maxTotal.value;
     while(true){
-      let r4=buildAuto("4D",4);
-      let r3=buildAuto("3D",3);
-      let r2=buildAuto("2D",2);
+      let r4=autoRow("4D",4);
+      let r3=autoRow("3D",3);
+      let r2=autoRow("2D",2);
       total=r4.total+r3.total+r2.total;
-      if(total<=max){
-        rows=[r4.html,r3.html,r2.html];
-        break;
-      }
+      if(total<=max){rows=[r4.html,r3.html,r2.html];break;}
     }
   }else{
-    let r4=buildManual("4D",4,+j4d.value,+n4d.value);
-    let r3=buildManual("3D",3,+j3d.value,+n3d.value);
-    let r2=buildManual("2D",2,+j2d.value,+n2d.value);
+    let r4=row("4D",genSet(4,+j4d.value,filter.value),+n4d.value,+j4d.value);
+    let r3=row("3D",genSet(3,+j3d.value,filter.value),+n3d.value,+j3d.value);
+    let r2=row("2D",genSet(2,+j2d.value,filter.value),+n2d.value,+j2d.value);
     total=r4.total+r3.total+r2.total;
     rows=[r4.html,r3.html,r2.html];
   }
@@ -163,30 +170,25 @@ function generate(){
 <div class="panel-">
 <h4 class="color-white">
 Bet Sukses!!
-<font color="orange">Periode ${per} - ${pasaran}</font>
+<font color="orange">Periode ${per} - ${pas}</font>
 </h4>
 <table class="history">
 <tr><th>No</th><th>Tebakan</th><th>Taruhan</th><th>Diskon</th><th>Bayar</th></tr>
 ${rows.join("")}
-<tr>
-<td colspan="4" align="center">Total Bayar Pemain :</td>
-<td>${total.toLocaleString()}</td>
-</tr>
+<tr><td colspan="4" align="center">Total Bayar Pemain :</td>
+<td>${total.toLocaleString()}</td></tr>
 </table>
 </div>
 `.trim();
 }
 
-// ===== COPY =====
 function copyHTML(){
-  output.select();
-  document.execCommand("copy");
+  navigator.clipboard.writeText(output.value);
 }
 
-
+togglePreset();
 toggleManual();
 </script>
 
 </body>
 </html>
-
