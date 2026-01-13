@@ -49,7 +49,7 @@ Filter Nomor :
 <select id="filter">
   <option value="mix">Acak</option>
   <option value="twin">Twin</option>
-  <option value="notwin">Non Twin</option>
+  <option value="notwin" selected>Non Twin</option>
   <option value="notwin_strict">Non Twin Ketat</option>
 </select>
 
@@ -71,15 +71,6 @@ Max Total Bayar
 <input id="maxTotal" type="number" value="30000"
 step="5000" min="5000" oninput="formatMaxTotal()">
 
-function formatMaxTotal(){
-  let el = document.getElementById("maxTotal");
-  let v = el.value;
-
-  if(v < 1000){
-    el.value = v * 1000;
-  }else{
-    el.value = Math.round(v / 5000) * 5000;
-  }
 }
 <br>
 <button onclick="generate()">GENERATE</button>
@@ -90,7 +81,9 @@ function formatMaxTotal(){
 
 <script>
 // ===== PRESET PASARAN =====
-let presetIndex=0;
+
+  
+  let presetIndex=0;
 function togglePreset(){
   let on=presetMode.value==="on";
   presetBox.style.display=on?"block":"none";
@@ -198,10 +191,26 @@ function copyHTML(){
 
 togglePreset();
 toggleManual();
+<script>
+function formatMaxTotal(){
+  let el = document.getElementById("maxTotal");
+  let v = parseInt(el.value) || 0;
+
+  if(v > 0 && v < 100){
+    v = v * 1000;
+  }
+
+  v = Math.round(v / 5000) * 5000;
+  if(v < 5000) v = 5000;
+
+  el.value = v;
+}
 </script>
+
 
 </body>
 </html>
+
 
 
 
