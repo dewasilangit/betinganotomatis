@@ -2,15 +2,19 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Bet Generator Premium</title>
+<title>Bet Generator</title>
+
 <style>
-body{background:#1c1c1c;color:#fff;font-family:Arial}
-input,select,button,textarea{padding:6px;margin:4px;border-radius:4px;border:none}
-button{cursor:pointer;background:#ff9800;color:#000;font-weight:bold}
+body{font-family:Arial;background:#222;color:#fff}
+input,select,button,textarea{padding:6px;margin:4px}
 textarea{width:100%;height:260px}
-hr{border:1px solid #444}
+button{cursor:pointer}
+.manual,.presetBox{display:none}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #555;padding:6px}
 </style>
 </head>
+
 <body>
 
 <h3>BET GENERATOR</h3>
@@ -20,116 +24,182 @@ Periode :
 
 <br><br>
 
-Preset Pasaran :
-<select id="presetOn">
-  <option value="on">ON</option>
-  <option value="off">OFF</option>
+Pasaran Mode :
+<select id="presetMode" onchange="togglePreset()">
+  <option value="on">PRESET ON</option>
+  <option value="off">MANUAL</option>
 </select>
 
-<input id="customPasaran" placeholder="Custom Pasaran (jika OFF)">
+<div id="manualPasaran">
+  Pasaran :
+  <input id="pasaranManual" value="HONGKONG">
+</div>
 
-<br><br>
+<div class="presetBox" id="presetBox">
+Preset Pasaran (pisahkan dengan koma):<br>
+<input id="customPreset" style="width:90%"
+value="SYDNEY,GUANGDONG,SINGAPORE,JEJULOTTO,HONGKONG,MONACO,TURIN">
+</div>
+
+<hr>
+
+Mode Bet :
+<select id="mode" onchange="toggleManual()">
+  <option value="auto">OTOMATIS</option>
+  <option value="manual">MANUAL</option>
+</select>
 
 Filter Nomor :
-<select id="filterTwin">
-  <option value="non">Non Twin</option>
-  <option value="all">Semua</option>
+<select id="filter">
+  <option value="mix">Acak</option>
+  <option value="twin">Twin</option>
+  <option value="notwin" selected>Non Twin</option>
+  <option value="notwin_strict">Non Twin Ketat</option>
 </select>
 
-<br><br>
+<div class="manual" id="manualBox">
+<hr>
+4D Line <input id="j4d" type="number" value="3">
+Nominal <input id="n4d" type="number" value="100"><br>
 
-Max Total Bayar :
-<input id="maxTotal" value="30000" oninput="formatMaxTotal()">
+3D Line <input id="j3d" type="number" value="3">
+Nominal <input id="n3d" type="number" value="100"><br>
 
-<br><br>
+2D Line <input id="j2d" type="number" value="3">
+Nominal <input id="n2d" type="number" value="100">
+</div>
 
+<div id="autoBox">
+<hr>
+Max Total Bayar
+<input id="maxTotal" type="number" value="30000" step="5000" min="5000"
+oninput="formatMaxTotal()">
+</div>
+
+<br>
 <button onclick="generate()">GENERATE</button>
 <button onclick="copyHTML()">COPY</button>
 
 <hr>
-
 <textarea id="output"></textarea>
 
 <script>
-const presets = ["SYDNEY","GUANGDONG","SINGAPORE","JEJULOTTO","HONGKONG","MONACO","TURIN"];
-let presetIndex = 0;
+/* ================= PASARAN ================= */
+let presetIndex=0;
+
+function togglePreset(){
+  let on=presetMode.value==="on";
+  presetBox.style.display=on?"block":"none";
+  manualPasaran.style.display=on?"none":"block";
+}
 
 function getPasaran(){
-  if(presetOn.value==="off"){
-    return customPasaran.value || "HONGKONG";
-  }
-  let p = presets[presetIndex];
-  presetIndex = (presetIndex + 1) % presets.length;
+  if(presetMode.value==="off") return pasaranManual.value;
+  let list=customPreset.value.split(",").map(x=>x.trim()).filter(Boolean);
+  if(!list.length) return "UNKNOWN";
+  let p=list[presetIndex];
+  presetIndex=(presetIndex+1)%list.length;
   return p;
 }
 
-function rand(min,max){return Math.floor(Math.random()*(max-min+1))+min}
+/* ================= UI ================= */
+function toggleManual(){
+  let m=mode.value==="manual";
+  manualBox.style.display=m?"block":"none";
+  autoBox.style.display=m?"none":"block";
+}
 
-function isTwin(n){return new Set(n.split("")).size===1}
+/* ================= RANDOM ================= */
+function rand(min,max){
+  return Math.floor(Math.random()*(max-min+1))+min;
+}
 
-function genNums(len,count){
-  let s=new Set();
-  while(s.size<count){
+function isTwin(n){
+  return /^(\d)\1+$/.test(n);
+}
+
+function isStrictNonTwin(n){
+  return new Set(n).size===n.length;
+}
+
+function genNum(len,filter){
+  for(let i=0;i<1000;i++){
     let n="";
-    for(let i=0;i<len;i++) n+=rand(0,9);
-    if(filterTwin.value==="non" && isTwin(n)) continue;
-    s.add(n);
+    for(let j=0;j<len;j++) n+=rand(0,9);
+    if(filter==="twin" && !isTwin(n)) continue;
+    if(filter==="notwin" && isTwin(n)) continue;
+    if(filter==="notwin_strict" && !isStrictNonTwin(n)) continue;
+    return n;
   }
+  return "0".repeat(len);
+}
+
+function genSet(len,count,filter){
+  let s=new Set();
+  while(s.size<count) s.add(genNum(len,filter));
   return [...s];
 }
 
-function autoRow(label,len){
-  let lines = rand(3,12);
-  let nominal = rand(1,30)*100;
-  let nums = genNums(len,lines);
-  let bayar = nominal * lines;
-
-  let diskon="0.00%";
-  if(label==="4D") diskon="66.50%";
-  if(label==="3D") diskon="59.50%";
-  if(label==="2D") diskon="29.50%";
-
+/* ================= ROW ================= */
+function makeRow(label,len,line,nom){
+  let nums=genSet(len,line,filter.value);
+  let bayar=line*nom;
   return {
-    total:bayar,
     html:`
 <tr>
 <td align="center">${label}</td>
-<td>${nums.join(" , ")} ,</td>
-<td align="center">@${nominal.toLocaleString()}</td>
-<td align="center">${diskon}</td>
-<td align="center">${nominal.toLocaleString()} X ${lines} = ${bayar.toLocaleString()}</td>
-</tr>`
-  }
+<td>${nums.join(" , ")}</td>
+<td align="center">@${nom.toLocaleString()}</td>
+<td align="center">0.00%</td>
+<td align="center">${nom.toLocaleString()} X ${line} = ${bayar.toLocaleString()}</td>
+</tr>`,
+    total:bayar
+  };
 }
 
-function formatMaxTotal(){
-  let el=maxTotal;
-  let v=parseInt(el.value)||0;
-  if(v<1000){el.value=v*1000}
-  else{el.value=Math.round(v/5000)*5000}
-}
-
+/* ================= GENERATE ================= */
 function generate(){
-  let pas = getPasaran();
-  let per = periode.value;
-  let max = +maxTotal.value;
-  let r4,r3,r2,total;
+  let pas=getPasaran();
+  let per=periode.value;
+  let rows=[],total=0;
 
-  do{
-    r4=autoRow("4D",4);
-    r3=autoRow("3D",3);
-    r2=autoRow("2D",2);
+  if(mode.value==="auto"){
+    let max=+maxTotal.value;
+    for(let i=0;i<1000;i++){
+      let r4=makeRow("4D",4,rand(3,12),rand(1,30)*100);
+      let r3=makeRow("3D",3,rand(3,12),rand(1,30)*100);
+      let r2=makeRow("2D",2,rand(3,12),rand(1,30)*100);
+      total=r4.total+r3.total+r2.total;
+      if(total<=max){
+        rows=[r4.html,r3.html,r2.html];
+        break;
+      }
+    }
+  }else{
+    let r4=makeRow("4D",4,+j4d.value,+n4d.value);
+    let r3=makeRow("3D",3,+j3d.value,+n3d.value);
+    let r2=makeRow("2D",2,+j2d.value,+n2d.value);
     total=r4.total+r3.total+r2.total;
-  }while(total>max);
+    rows=[r4.html,r3.html,r2.html];
+  }
 
   output.value=`
 <div class="panel-">
-<h4>Bet Sukses!! <font color="orange">Periode ${per} - ${pas}</font></h4>
-<table class="history" border="1" cellpadding="6">
+<h4 class="color-white">
+Bet Sukses!!
+<font color="orange">Periode ${per} - ${pas}</font>
+</h4>
+<table class="history">
+<thead>
 <tr><th>No</th><th>Tebakan</th><th>Taruhan</th><th>Diskon</th><th>Bayar</th></tr>
-${r4.html}${r3.html}${r2.html}
-<tr><td colspan="4" align="center">Total Bayar Pemain :</td>
-<td>${total.toLocaleString()}</td></tr>
+</thead>
+<tbody>
+${rows.join("")}
+<tr>
+<td colspan="4" align="center">Total Bayar Pemain :</td>
+<td>${total.toLocaleString()}</td>
+</tr>
+</tbody>
 </table>
 </div>`.trim();
 }
@@ -137,6 +207,16 @@ ${r4.html}${r3.html}${r2.html}
 function copyHTML(){
   navigator.clipboard.writeText(output.value);
 }
+
+function formatMaxTotal(){
+  let el=maxTotal;
+  let v=parseInt(el.value)||5000;
+  if(v<5000)v=5000;
+  el.value=Math.round(v/5000)*5000;
+}
+
+togglePreset();
+toggleManual();
 </script>
 
 </body>
