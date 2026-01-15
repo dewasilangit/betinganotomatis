@@ -35,13 +35,6 @@ body{
   color:orange;
 }
 
-.login-card input{
-  width:100%;
-  padding:10px;
-  border:none;
-  border-radius:5px;
-}
-
 .login-card button{
   width:100%;
   padding:10px;
@@ -55,7 +48,11 @@ body{
 
 .login-card button:hover{opacity:.9}
 
-.error{color:#ff4d4d;font-size:13px;margin-top:10px}
+.error{
+  color:#ff4d4d;
+  font-size:13px;
+  margin-top:10px;
+}
 
 /* ===== APP ===== */
 #app{display:none;padding:20px}
@@ -101,14 +98,25 @@ th,td{
 <!-- ===== LOGIN ===== -->
 <div id="loginBox">
   <div class="login-card">
-    <h2>JUARANYA</h2>
+    <h2>PASSWORD-NYA BANG MESSI</h2>
     <p>Masukkan Sandi</p>
 
-    <div style="position:relative">
-      <input type="password" id="password" placeholder="Password" style="padding-right:40px">
-      <span onclick="togglePassword()"
-        style="position:absolute;right:12px;top:50%;transform:translateY(-50%);
-        cursor:pointer;font-size:18px">👁</span>
+    <div style="position:relative;margin-top:15px">
+      <input type="password" id="password" placeholder="Password"
+        style="width:100%;padding:10px 42px 10px 10px;border-radius:5px;border:none">
+
+      <span id="eyeIcon"
+        onclick="togglePassword()"
+        style="
+          position:absolute;
+          right:12px;
+          top:50%;
+          transform:translateY(-50%);
+          cursor:pointer;
+          font-size:20px;
+          color:#333;
+          user-select:none;
+        ">👁️</span>
     </div>
 
     <button onclick="login()">MASUK</button>
@@ -174,8 +182,7 @@ Nominal <input id="n2d" type="number" value="100">
 <div id="autoBox">
 <hr>
 Max Total Bayar
-<input id="maxTotal" type="number" value="30000" step="5000" min="5000"
-oninput="formatMaxTotal()">
+<input id="maxTotal" type="number" value="30000">
 </div>
 
 <br>
@@ -188,14 +195,15 @@ oninput="formatMaxTotal()">
 </div>
 
 <script>
-/* ===== SESSION LOGIN ===== */
-window.onload=function(){
-  if(sessionStorage.getItem("loginJUARA")==="ok"){
+/* ===== AUTO LOGIN (SESSION TAB) ===== */
+if(sessionStorage.getItem("loginJUARA")==="ok"){
+  document.addEventListener("DOMContentLoaded",()=>{
     loginBox.style.display="none";
     app.style.display="block";
-  }
-};
+  });
+}
 
+/* ===== LOGIN ===== */
 function login(){
   if(password.value==="juarapass"){
     sessionStorage.setItem("loginJUARA","ok");
@@ -206,8 +214,15 @@ function login(){
   }
 }
 
+/* ===== TOGGLE PASSWORD ===== */
 function togglePassword(){
-  password.type = password.type==="password"?"text":"password";
+  if(password.type==="password"){
+    password.type="text";
+    eyeIcon.innerText="🙈";
+  }else{
+    password.type="password";
+    eyeIcon.innerText="👁️";
+  }
 }
 
 /* ===== PASARAN ===== */
@@ -235,51 +250,28 @@ function toggleManual(){
 
 /* ===== GENERATOR ===== */
 function rand(min,max){return Math.floor(Math.random()*(max-min+1))+min}
-function isTwin(n){return /^(\d)\1+$/.test(n)}
-function isStrictNonTwin(n){return new Set(n).size===n.length}
-
-function genNum(len,f){
-  for(let i=0;i<1000;i++){
-    let n="";for(let j=0;j<len;j++)n+=rand(0,9);
-    if(f==="twin"&&!isTwin(n))continue;
-    if(f==="notwin"&&isTwin(n))continue;
-    if(f==="notwin_strict"&&!isStrictNonTwin(n))continue;
-    return n;
-  }
-  return "0".repeat(len);
-}
-
-function genSet(len,c,f){
-  let s=new Set();while(s.size<c)s.add(genNum(len,f));
-  return [...s];
-}
-
-function makeRow(l,len,line,nom){
-  let nums=genSet(len,line,filter.value);
-  let bayar=line*nom;
-  return {
-    html:`<tr><td align=center>${l}</td><td>${nums.join(" , ")}</td>
-    <td align=center>@${nom}</td><td align=center>0%</td>
-    <td align=center>${bayar}</td></tr>`,
-    total:bayar
-  };
+function genNum(len){
+  let n="";for(let i=0;i<len;i++)n+=rand(0,9);
+  return n;
 }
 
 function generate(){
   let per=periode.value.trim();
   if(per===""||per==="0000"){alert("Periode belum diganti");return;}
-  let pas=getPasaran(),rows=[],total=0;
-  let r4=makeRow("4D",4,3,100);
-  let r3=makeRow("3D",3,3,100);
-  let r2=makeRow("2D",2,3,100);
-  total=r4.total+r3.total+r2.total;
-  rows=[r4.html,r3.html,r2.html];
-  output.value=`Bet Sukses!! Periode ${per} - ${pas}\nTotal: ${total}`;
+  let pas=getPasaran();
+  output.value=`Bet Sukses!!
+Periode ${per} - ${pas}
+4D: ${genNum(4)}
+3D: ${genNum(3)}
+2D: ${genNum(2)}`;
 }
 
-function copyHTML(){navigator.clipboard.writeText(output.value)}
-function formatMaxTotal(){}
-togglePreset();toggleManual();
+function copyHTML(){
+  navigator.clipboard.writeText(output.value);
+}
+
+togglePreset();
+toggleManual();
 </script>
 
 </body>
