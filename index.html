@@ -5,10 +5,8 @@
 <title>JUARANYA BET GENERATOR</title>
 
 <style>
-/* ===== RESET ===== */
 *{box-sizing:border-box;font-family:Arial,Helvetica,sans-serif}
 
-/* ===== BODY ===== */
 body{
   margin:0;
   background:linear-gradient(135deg,#111,#222);
@@ -40,7 +38,6 @@ body{
 .login-card input{
   width:100%;
   padding:10px;
-  margin-top:15px;
   border:none;
   border-radius:5px;
 }
@@ -56,25 +53,14 @@ body{
   font-weight:bold;
 }
 
-.login-card button:hover{
-  opacity:.9;
-}
+.login-card button:hover{opacity:.9}
 
-.error{
-  color:#ff4d4d;
-  font-size:13px;
-  margin-top:10px;
-}
+.error{color:#ff4d4d;font-size:13px;margin-top:10px}
 
 /* ===== APP ===== */
-#app{
-  display:none;
-  padding:20px;
-}
+#app{display:none;padding:20px}
 
-h3{
-  color:orange;
-}
+h3{color:orange}
 
 input,select,button,textarea{
   padding:6px;
@@ -94,13 +80,9 @@ button{
   border-radius:4px;
 }
 
-button:hover{
-  background:#666;
-}
+button:hover{background:#666}
 
-.manual,.presetBox{
-  display:none;
-}
+.manual,.presetBox{display:none}
 
 table{
   border-collapse:collapse;
@@ -121,7 +103,14 @@ th,td{
   <div class="login-card">
     <h2>JUARANYA</h2>
     <p>Masukkan Sandi</p>
-    <input type="password" id="password" placeholder="Password">
+
+    <div style="position:relative">
+      <input type="password" id="password" placeholder="Password" style="padding-right:40px">
+      <span onclick="togglePassword()"
+        style="position:absolute;right:12px;top:50%;transform:translateY(-50%);
+        cursor:pointer;font-size:18px">👁</span>
+    </div>
+
     <button onclick="login()">MASUK</button>
     <div id="error" class="error"></div>
   </div>
@@ -199,18 +188,29 @@ oninput="formatMaxTotal()">
 </div>
 
 <script>
-/* ===== LOGIN ===== */
+/* ===== SESSION LOGIN ===== */
+window.onload=function(){
+  if(sessionStorage.getItem("loginJUARA")==="ok"){
+    loginBox.style.display="none";
+    app.style.display="block";
+  }
+};
+
 function login(){
-  const pass = document.getElementById("password").value;
-  if(pass === "juarapass"){
+  if(password.value==="juarapass"){
+    sessionStorage.setItem("loginJUARA","ok");
     loginBox.style.display="none";
     app.style.display="block";
   }else{
-    error.innerText="❌ Password salah!";
+    error.innerText="❌ Password salah";
   }
 }
 
-/* ================= PASARAN ================= */
+function togglePassword(){
+  password.type = password.type==="password"?"text":"password";
+}
+
+/* ===== PASARAN ===== */
 let presetIndex=0;
 
 function togglePreset(){
@@ -222,118 +222,64 @@ function togglePreset(){
 function getPasaran(){
   if(presetMode.value==="off") return pasaranManual.value;
   let list=customPreset.value.split(",").map(x=>x.trim()).filter(Boolean);
-  if(!list.length) return "UNKNOWN";
   let p=list[presetIndex];
   presetIndex=(presetIndex+1)%list.length;
   return p;
 }
 
-/* ================= UI ================= */
 function toggleManual(){
   let m=mode.value==="manual";
   manualBox.style.display=m?"block":"none";
   autoBox.style.display=m?"none":"block";
 }
 
-/* ================= RANDOM ================= */
-function rand(min,max){
-  return Math.floor(Math.random()*(max-min+1))+min;
-}
+/* ===== GENERATOR ===== */
+function rand(min,max){return Math.floor(Math.random()*(max-min+1))+min}
+function isTwin(n){return /^(\d)\1+$/.test(n)}
+function isStrictNonTwin(n){return new Set(n).size===n.length}
 
-function isTwin(n){
-  return /^(\d)\1+$/.test(n);
-}
-
-function isStrictNonTwin(n){
-  return new Set(n).size===n.length;
-}
-
-function genNum(len,filter){
+function genNum(len,f){
   for(let i=0;i<1000;i++){
-    let n="";
-    for(let j=0;j<len;j++) n+=rand(0,9);
-    if(filter==="twin" && !isTwin(n)) continue;
-    if(filter==="notwin" && isTwin(n)) continue;
-    if(filter==="notwin_strict" && !isStrictNonTwin(n)) continue;
+    let n="";for(let j=0;j<len;j++)n+=rand(0,9);
+    if(f==="twin"&&!isTwin(n))continue;
+    if(f==="notwin"&&isTwin(n))continue;
+    if(f==="notwin_strict"&&!isStrictNonTwin(n))continue;
     return n;
   }
   return "0".repeat(len);
 }
 
-function genSet(len,count,filter){
-  let s=new Set();
-  while(s.size<count) s.add(genNum(len,filter));
+function genSet(len,c,f){
+  let s=new Set();while(s.size<c)s.add(genNum(len,f));
   return [...s];
 }
 
-/* ================= ROW ================= */
-function makeRow(label,len,line,nom){
+function makeRow(l,len,line,nom){
   let nums=genSet(len,line,filter.value);
   let bayar=line*nom;
   return {
-    html:`
-<tr>
-<td align="center">${label}</td>
-<td>${nums.join(" , ")} ,</td>
-<td align="center">@${nom.toLocaleString()}</td>
-<td align="center">0.00%</td>
-<td align="center">${nom.toLocaleString()} X ${line} = ${bayar.toLocaleString()}</td>
-</tr>`,
+    html:`<tr><td align=center>${l}</td><td>${nums.join(" , ")}</td>
+    <td align=center>@${nom}</td><td align=center>0%</td>
+    <td align=center>${bayar}</td></tr>`,
     total:bayar
   };
 }
 
-/* ================= GENERATE ================= */
 function generate(){
-  let per = periode.value.trim();
-  if(per === "" || per === "0000"){
-    alert("Periode belum diganti!");
-    return;
-  }
-
-  let pas = getPasaran();
-  let rows=[], total=0;
-
-  if(mode.value==="auto"){
-    let max=+maxTotal.value;
-    for(let i=0;i<1000;i++){
-      let r4=makeRow("4D",4,rand(3,12),rand(1,30)*100);
-      let r3=makeRow("3D",3,rand(3,12),rand(1,30)*100);
-      let r2=makeRow("2D",2,rand(3,12),rand(1,30)*100);
-      total=r4.total+r3.total+r2.total;
-      if(total<=max){rows=[r4.html,r3.html,r2.html];break;}
-    }
-  }else{
-    let r4=makeRow("4D",4,+j4d.value,+n4d.value);
-    let r3=makeRow("3D",3,+j3d.value,+n3d.value);
-    let r2=makeRow("2D",2,+j2d.value,+n2d.value);
-    total=r4.total+r3.total+r2.total;
-    rows=[r4.html,r3.html,r2.html];
-  }
-
-  output.value=`
-<div class="panel-">
-<h4>Bet Sukses!! <font color="orange">Periode ${per} - ${pas}</font></h4>
-<table class="history">
-<tr><th>No</th><th>Tebakan</th><th>Taruhan</th><th>Diskon</th><th>Bayar</th></tr>
-${rows.join("")}
-<tr><td colspan="4" align="center">Total Bayar Pemain :</td><td>${total.toLocaleString()}</td></tr>
-</table>
-</div>`;
+  let per=periode.value.trim();
+  if(per===""||per==="0000"){alert("Periode belum diganti");return;}
+  let pas=getPasaran(),rows=[],total=0;
+  let r4=makeRow("4D",4,3,100);
+  let r3=makeRow("3D",3,3,100);
+  let r2=makeRow("2D",2,3,100);
+  total=r4.total+r3.total+r2.total;
+  rows=[r4.html,r3.html,r2.html];
+  output.value=`Bet Sukses!! Periode ${per} - ${pas}\nTotal: ${total}`;
 }
 
-function copyHTML(){
-  navigator.clipboard.writeText(output.value);
-}
-
-function formatMaxTotal(){
-  let v=parseInt(maxTotal.value)||5000;
-  if(v<5000)v=5000;
-  maxTotal.value=Math.round(v/5000)*5000;
-}
-
-togglePreset();
-toggleManual();
+function copyHTML(){navigator.clipboard.writeText(output.value)}
+function formatMaxTotal(){}
+togglePreset();toggleManual();
 </script>
 
 </body>
