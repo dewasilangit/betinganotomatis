@@ -2,15 +2,14 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>JUARANYA BET GENERATOR</title>
+<title>Bet Generator</title>
 
 <style>
-*{box-sizing:border-box;font-family:Arial,Helvetica,sans-serif}
-
 body{
-  margin:0;
-  background:linear-gradient(135deg,#111,#222);
+  font-family:Arial;
+  background:#222;
   color:#fff;
+  margin:0;
 }
 
 /* ===== LOGIN ===== */
@@ -19,8 +18,8 @@ body{
   display:flex;
   justify-content:center;
   align-items:center;
+  background:radial-gradient(#333,#111);
 }
-
 .login-card{
   background:#1e1e1e;
   padding:30px;
@@ -29,67 +28,47 @@ body{
   box-shadow:0 0 25px rgba(0,0,0,.6);
   text-align:center;
 }
-
 .login-card h2{
   margin:0 0 10px;
   color:orange;
 }
-
-.login-card button{
+.login-card input{
   width:100%;
   padding:10px;
+  margin-top:10px;
+  border:none;
+  border-radius:5px;
+}
+.pass-wrap{
+  position:relative;
+}
+#eyeIcon{
+  position:absolute;
+  right:10px;
+  top:50%;
+  transform:translateY(-50%);
+  cursor:pointer;
+}
+.login-card button{
   margin-top:15px;
+  width:100%;
+  padding:10px;
   background:orange;
   border:none;
   border-radius:5px;
-  cursor:pointer;
   font-weight:bold;
-}
-
-.login-card button:hover{opacity:.9}
-
-.error{
-  color:#ff4d4d;
-  font-size:13px;
-  margin-top:10px;
+  cursor:pointer;
 }
 
 /* ===== APP ===== */
-#app{display:none;padding:20px}
+#app{display:none;padding:15px}
 
-h3{color:orange}
-
-input,select,button,textarea{
-  padding:6px;
-  margin:4px;
-}
-
-textarea{
-  width:100%;
-  height:260px;
-}
-
-button{
-  cursor:pointer;
-  background:#444;
-  color:#fff;
-  border:none;
-  border-radius:4px;
-}
-
-button:hover{background:#666}
-
+input,select,button,textarea{padding:6px;margin:4px}
+textarea{width:100%;height:260px}
+button{cursor:pointer}
 .manual,.presetBox{display:none}
-
-table{
-  border-collapse:collapse;
-  width:100%;
-}
-
-th,td{
-  border:1px solid #555;
-  padding:6px;
-}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #555;padding:6px}
 </style>
 </head>
 
@@ -98,29 +77,12 @@ th,td{
 <!-- ===== LOGIN ===== -->
 <div id="loginBox">
   <div class="login-card">
-    <h2>PASSWORD-NYA BANG MESSI</h2>
-    <p>Masukkan Sandi</p>
-
-    <div style="position:relative;margin-top:15px">
-      <input type="password" id="password" placeholder="Password"
-        style="width:100%;padding:10px 42px 10px 10px;border-radius:5px;border:none">
-
-      <span id="eyeIcon"
-        onclick="togglePassword()"
-        style="
-          position:absolute;
-          right:12px;
-          top:50%;
-          transform:translateY(-50%);
-          cursor:pointer;
-          font-size:20px;
-          color:#333;
-          user-select:none;
-        ">👁️</span>
+    <h2>JUARANYA</h2>
+    <div class="pass-wrap">
+      <input type="password" id="password" placeholder="Masukkan sandi">
+      <span id="eyeIcon" onclick="togglePassword()">👁️</span>
     </div>
-
     <button onclick="login()">MASUK</button>
-    <div id="error" class="error"></div>
   </div>
 </div>
 
@@ -182,7 +144,8 @@ Nominal <input id="n2d" type="number" value="100">
 <div id="autoBox">
 <hr>
 Max Total Bayar
-<input id="maxTotal" type="number" value="30000">
+<input id="maxTotal" type="number" value="30000" step="5000" min="5000"
+oninput="formatMaxTotal()">
 </div>
 
 <br>
@@ -195,26 +158,19 @@ Max Total Bayar
 </div>
 
 <script>
-/* ===== AUTO LOGIN (SESSION TAB) ===== */
-if(sessionStorage.getItem("loginJUARA")==="ok"){
-  document.addEventListener("DOMContentLoaded",()=>{
-    loginBox.style.display="none";
-    app.style.display="block";
-  });
-}
+/* ===== LOGIN LOGIC ===== */
+const PASS = "juarapass";
 
-/* ===== LOGIN ===== */
 function login(){
-  if(password.value==="juarapass"){
-    sessionStorage.setItem("loginJUARA","ok");
+  if(password.value === PASS){
+    sessionStorage.setItem("login","1");
     loginBox.style.display="none";
     app.style.display="block";
   }else{
-    error.innerText="❌ Password salah";
+    alert("Sandi salah!");
   }
 }
 
-/* ===== TOGGLE PASSWORD ===== */
 function togglePassword(){
   if(password.type==="password"){
     password.type="text";
@@ -225,7 +181,12 @@ function togglePassword(){
   }
 }
 
-/* ===== PASARAN ===== */
+if(sessionStorage.getItem("login")==="1"){
+  loginBox.style.display="none";
+  app.style.display="block";
+}
+
+/* ================= PASARAN ================= */
 let presetIndex=0;
 
 function togglePreset(){
@@ -237,37 +198,122 @@ function togglePreset(){
 function getPasaran(){
   if(presetMode.value==="off") return pasaranManual.value;
   let list=customPreset.value.split(",").map(x=>x.trim()).filter(Boolean);
+  if(!list.length) return "UNKNOWN";
   let p=list[presetIndex];
   presetIndex=(presetIndex+1)%list.length;
   return p;
 }
 
+/* ================= UI ================= */
 function toggleManual(){
   let m=mode.value==="manual";
   manualBox.style.display=m?"block":"none";
   autoBox.style.display=m?"none":"block";
 }
 
-/* ===== GENERATOR ===== */
-function rand(min,max){return Math.floor(Math.random()*(max-min+1))+min}
-function genNum(len){
-  let n="";for(let i=0;i<len;i++)n+=rand(0,9);
-  return n;
+/* ================= RANDOM ================= */
+function rand(min,max){
+  return Math.floor(Math.random()*(max-min+1))+min;
 }
 
+function isTwin(n){return /^(\d)\1+$/.test(n);}
+function isStrictNonTwin(n){return new Set(n).size===n.length;}
+
+function genNum(len,filter){
+  for(let i=0;i<1000;i++){
+    let n="";
+    for(let j=0;j<len;j++) n+=rand(0,9);
+    if(filter==="twin" && !isTwin(n)) continue;
+    if(filter==="notwin" && isTwin(n)) continue;
+    if(filter==="notwin_strict" && !isStrictNonTwin(n)) continue;
+    return n;
+  }
+  return "0".repeat(len);
+}
+
+function genSet(len,count,filter){
+  let s=new Set();
+  while(s.size<count) s.add(genNum(len,filter));
+  return [...s];
+}
+
+/* ================= ROW ================= */
+function makeRow(label,len,line,nom){
+  let nums=genSet(len,line,filter.value);
+  let bayar=line*nom;
+  return {
+    html:`
+<tr>
+<td align="center">${label}</td>
+<td>${nums.join(" , ")} ,</td>
+<td align="center">@${nom.toLocaleString()}</td>
+<td align="center">0.00%</td>
+<td align="center">${nom.toLocaleString()} X ${line} = ${bayar.toLocaleString()}</td>
+</tr>`,
+    total:bayar
+  };
+}
+
+/* ================= GENERATE (TIDAK DIUBAH HASILNYA) ================= */
 function generate(){
-  let per=periode.value.trim();
-  if(per===""||per==="0000"){alert("Periode belum diganti");return;}
-  let pas=getPasaran();
-  output.value=`Bet Sukses!!
-Periode ${per} - ${pas}
-4D: ${genNum(4)}
-3D: ${genNum(3)}
-2D: ${genNum(2)}`;
+  let per = periode.value.trim();
+  if(per === "" || per === "0000"){
+    alert("Periode belum diganti, cek lagi!");
+    return;
+  }
+
+  let pas = getPasaran();
+  let rows = [], total = 0;
+
+  if(mode.value === "auto"){
+    let max = +maxTotal.value;
+    for(let i=0;i<1000;i++){
+      let r4 = makeRow("4D",4,rand(3,12),rand(1,30)*100);
+      let r3 = makeRow("3D",3,rand(3,12),rand(1,30)*100);
+      let r2 = makeRow("2D",2,rand(3,12),rand(1,30)*100);
+      total = r4.total + r3.total + r2.total;
+      if(total <= max){
+        rows = [r4.html, r3.html, r2.html];
+        break;
+      }
+    }
+  }else{
+    let r4 = makeRow("4D",4,+j4d.value,+n4d.value);
+    let r3 = makeRow("3D",3,+j3d.value,+n3d.value);
+    let r2 = makeRow("2D",2,+j2d.value,+n2d.value);
+    total = r4.total + r3.total + r2.total;
+    rows = [r4.html, r3.html, r2.html];
+  }
+
+  output.value = `
+<div class="panel-">
+<h4 class="color-white">
+Bet Sukses!!
+<font color="orange">Periode ${per} - ${pas}</font>
+</h4>
+<table class="history">
+<thead>
+<tr><th>No</th><th>Tebakan</th><th>Taruhan</th><th>Diskon</th><th>Bayar</th></tr>
+</thead>
+<tbody>
+${rows.join("")}
+<tr>
+<td colspan="4" align="center">Total Bayar Pemain :</td>
+<td>${total.toLocaleString()}</td>
+</tr>
+</tbody>
+</table>
+</div>`.trim();
 }
 
 function copyHTML(){
   navigator.clipboard.writeText(output.value);
+}
+
+function formatMaxTotal(){
+  let v=parseInt(maxTotal.value)||5000;
+  if(v<5000)v=5000;
+  maxTotal.value=Math.round(v/5000)*5000;
 }
 
 togglePreset();
