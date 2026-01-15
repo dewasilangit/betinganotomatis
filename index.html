@@ -2,20 +2,133 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Bet Generator</title>
+<title>JUARANYA BET GENERATOR</title>
 
 <style>
-body{font-family:Arial;background:#222;color:#fff}
-input,select,button,textarea{padding:6px;margin:4px}
-textarea{width:100%;height:260px}
-button{cursor:pointer}
-.manual,.presetBox{display:none}
-table{border-collapse:collapse;width:100%}
-th,td{border:1px solid #555;padding:6px}
+/* ===== RESET ===== */
+*{box-sizing:border-box;font-family:Arial,Helvetica,sans-serif}
+
+/* ===== BODY ===== */
+body{
+  margin:0;
+  background:linear-gradient(135deg,#111,#222);
+  color:#fff;
+}
+
+/* ===== LOGIN ===== */
+#loginBox{
+  height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+
+.login-card{
+  background:#1e1e1e;
+  padding:30px;
+  width:320px;
+  border-radius:10px;
+  box-shadow:0 0 25px rgba(0,0,0,.6);
+  text-align:center;
+}
+
+.login-card h2{
+  margin:0 0 10px;
+  color:orange;
+}
+
+.login-card input{
+  width:100%;
+  padding:10px;
+  margin-top:15px;
+  border:none;
+  border-radius:5px;
+}
+
+.login-card button{
+  width:100%;
+  padding:10px;
+  margin-top:15px;
+  background:orange;
+  border:none;
+  border-radius:5px;
+  cursor:pointer;
+  font-weight:bold;
+}
+
+.login-card button:hover{
+  opacity:.9;
+}
+
+.error{
+  color:#ff4d4d;
+  font-size:13px;
+  margin-top:10px;
+}
+
+/* ===== APP ===== */
+#app{
+  display:none;
+  padding:20px;
+}
+
+h3{
+  color:orange;
+}
+
+input,select,button,textarea{
+  padding:6px;
+  margin:4px;
+}
+
+textarea{
+  width:100%;
+  height:260px;
+}
+
+button{
+  cursor:pointer;
+  background:#444;
+  color:#fff;
+  border:none;
+  border-radius:4px;
+}
+
+button:hover{
+  background:#666;
+}
+
+.manual,.presetBox{
+  display:none;
+}
+
+table{
+  border-collapse:collapse;
+  width:100%;
+}
+
+th,td{
+  border:1px solid #555;
+  padding:6px;
+}
 </style>
 </head>
 
 <body>
+
+<!-- ===== LOGIN ===== -->
+<div id="loginBox">
+  <div class="login-card">
+    <h2>JUARANYA</h2>
+    <p>Masukkan Sandi</p>
+    <input type="password" id="password" placeholder="Password">
+    <button onclick="login()">MASUK</button>
+    <div id="error" class="error"></div>
+  </div>
+</div>
+
+<!-- ===== APP ===== -->
+<div id="app">
 
 <h3>JUARANYA BET GENERATOR</h3>
 
@@ -83,7 +196,20 @@ oninput="formatMaxTotal()">
 <hr>
 <textarea id="output"></textarea>
 
+</div>
+
 <script>
+/* ===== LOGIN ===== */
+function login(){
+  const pass = document.getElementById("password").value;
+  if(pass === "juarapass"){
+    loginBox.style.display="none";
+    app.style.display="block";
+  }else{
+    error.innerText="❌ Password salah!";
+  }
+}
+
 /* ================= PASARAN ================= */
 let presetIndex=0;
 
@@ -159,57 +285,41 @@ function makeRow(label,len,line,nom){
 
 /* ================= GENERATE ================= */
 function generate(){
-
-  // VALIDASI PERIODE
   let per = periode.value.trim();
   if(per === "" || per === "0000"){
-    alert("Periode belum diganti, cek lagi!");
-    periode.focus();
+    alert("Periode belum diganti!");
     return;
   }
 
   let pas = getPasaran();
-  let rows = [], total = 0;
+  let rows=[], total=0;
 
-  if(mode.value === "auto"){
-    let max = +maxTotal.value;
+  if(mode.value==="auto"){
+    let max=+maxTotal.value;
     for(let i=0;i<1000;i++){
-      let r4 = makeRow("4D",4,rand(3,12),rand(1,30)*100);
-      let r3 = makeRow("3D",3,rand(3,12),rand(1,30)*100);
-      let r2 = makeRow("2D",2,rand(3,12),rand(1,30)*100);
-      total = r4.total + r3.total + r2.total;
-      if(total <= max){
-        rows = [r4.html, r3.html, r2.html];
-        break;
-      }
+      let r4=makeRow("4D",4,rand(3,12),rand(1,30)*100);
+      let r3=makeRow("3D",3,rand(3,12),rand(1,30)*100);
+      let r2=makeRow("2D",2,rand(3,12),rand(1,30)*100);
+      total=r4.total+r3.total+r2.total;
+      if(total<=max){rows=[r4.html,r3.html,r2.html];break;}
     }
-  } else {
-    let r4 = makeRow("4D",4,+j4d.value,+n4d.value);
-    let r3 = makeRow("3D",3,+j3d.value,+n3d.value);
-    let r2 = makeRow("2D",2,+j2d.value,+n2d.value);
-    total = r4.total + r3.total + r2.total;
-    rows = [r4.html, r3.html, r2.html];
+  }else{
+    let r4=makeRow("4D",4,+j4d.value,+n4d.value);
+    let r3=makeRow("3D",3,+j3d.value,+n3d.value);
+    let r2=makeRow("2D",2,+j2d.value,+n2d.value);
+    total=r4.total+r3.total+r2.total;
+    rows=[r4.html,r3.html,r2.html];
   }
 
-  output.value = `
+  output.value=`
 <div class="panel-">
-<h4 class="color-white">
-Bet Sukses!!
-<font color="orange">Periode ${per} - ${pas}</font>
-</h4>
+<h4>Bet Sukses!! <font color="orange">Periode ${per} - ${pas}</font></h4>
 <table class="history">
-<thead>
 <tr><th>No</th><th>Tebakan</th><th>Taruhan</th><th>Diskon</th><th>Bayar</th></tr>
-</thead>
-<tbody>
 ${rows.join("")}
-<tr>
-<td colspan="4" align="center">Total Bayar Pemain :</td>
-<td>${total.toLocaleString()}</td>
-</tr>
-</tbody>
+<tr><td colspan="4" align="center">Total Bayar Pemain :</td><td>${total.toLocaleString()}</td></tr>
 </table>
-</div>`.trim();
+</div>`;
 }
 
 function copyHTML(){
@@ -217,10 +327,9 @@ function copyHTML(){
 }
 
 function formatMaxTotal(){
-  let el=maxTotal;
-  let v=parseInt(el.value)||5000;
+  let v=parseInt(maxTotal.value)||5000;
   if(v<5000)v=5000;
-  el.value=Math.round(v/5000)*5000;
+  maxTotal.value=Math.round(v/5000)*5000;
 }
 
 togglePreset();
@@ -229,8 +338,3 @@ toggleManual();
 
 </body>
 </html>
-
-
-
-
-
