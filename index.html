@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <title>Bet Generator</title>
-
 <style>
 body{
   font-family:Arial;
@@ -11,58 +10,8 @@ body{
   color:#fff;
   margin:0;
 }
-
-/* ===== LOGIN ===== */
-#loginBox{
-  height:100vh;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  background:radial-gradient(#333,#111);
-}
-.login-card{
-  background:#1e1e1e;
-  padding:30px;
-  width:320px;
-  border-radius:10px;
-  box-shadow:0 0 25px rgba(0,0,0,.6);
-  text-align:center;
-}
-.login-card h2{
-  margin:0 0 10px;
-  color:orange;
-}
-.login-card input{
-  width:100%;
-  padding:10px;
-  margin-top:10px;
-  border:none;
-  border-radius:5px;
-}
-.pass-wrap{
-  position:relative;
-}
-#eyeIcon{
-  position:absolute;
-  right:10px;
-  top:50%;
-  transform:translateY(-50%);
-  cursor:pointer;
-}
-.login-card button{
-  margin-top:15px;
-  width:100%;
-  padding:10px;
-  background:orange;
-  border:none;
-  border-radius:5px;
-  font-weight:bold;
-  cursor:pointer;
-}
-
 /* ===== APP ===== */
-#app{display:none;padding:15px}
-
+#app{padding:15px}
 input,select,button,textarea{padding:6px;margin:4px}
 textarea{width:100%;height:260px}
 button{cursor:pointer}
@@ -71,56 +20,34 @@ table{border-collapse:collapse;width:100%}
 th,td{border:1px solid #555;padding:6px}
 </style>
 </head>
-
 <body>
 
-<!-- ===== LOGIN ===== -->
-<div id="loginBox">
-  <div class="login-card">
-    <h2>SETTTTTTTT</h2>
-    <div class="pass-wrap">
-      <input type="password" id="password" placeholder="Masukkan sandi">
-      <span id="eyeIcon" onclick="togglePassword()">👁️</span>
-    </div>
-    <button onclick="login()">MASUK</button>
-  </div>
-</div>
-
-<!-- ===== APP ===== -->
+<!-- ===== APP (Login dihapus) ===== -->
 <div id="app">
-
 <h3>JUARANYA BET GENERATOR</h3>
-
 Periode :
 <input id="periode" value="0000">
-
 <br><br>
-
 Pasaran Mode :
 <select id="presetMode" onchange="togglePreset()">
   <option value="on">PRESET ON</option>
   <option value="off">MANUAL</option>
 </select>
-
 <div id="manualPasaran">
   Pasaran :
   <input id="pasaranManual" value="HONGKONG">
 </div>
-
 <div class="presetBox" id="presetBox">
 Preset Pasaran (pisahkan dengan koma):<br>
 <input id="customPreset" style="width:90%"
 value="SYDNEY,GUANGDONG,SINGAPORE,JEJULOTTO,HONGKONG,MONACO,TURIN">
 </div>
-
 <hr>
-
 Mode Bet :
 <select id="mode" onchange="toggleManual()">
   <option value="auto">OTOMATIS</option>
   <option value="manual">MANUAL</option>
 </select>
-
 Filter Nomor :
 <select id="filter">
   <option value="mix">Acak</option>
@@ -128,71 +55,36 @@ Filter Nomor :
   <option value="notwin" selected>Non Twin</option>
   <option value="notwin_strict">Non Twin Ketat</option>
 </select>
-
 <div class="manual" id="manualBox">
 <hr>
 4D Line <input id="j4d" type="number" value="3">
 Nominal <input id="n4d" type="number" value="100"><br>
-
 3D Line <input id="j3d" type="number" value="3">
 Nominal <input id="n3d" type="number" value="100"><br>
-
 2D Line <input id="j2d" type="number" value="3">
 Nominal <input id="n2d" type="number" value="100">
 </div>
-
 <div id="autoBox">
 <hr>
 Max Total Bayar
 <input id="maxTotal" type="number" value="30000" step="5000" min="5000"
 oninput="formatMaxTotal()">
 </div>
-
 <br>
 <button onclick="generate()">GENERATE</button>
 <button onclick="copyHTML()">COPY</button>
-
 <hr>
 <textarea id="output"></textarea>
-
 </div>
 
 <script>
-
-function login(){
-  if(password.value === PASS){
-    sessionStorage.setItem("login","1");
-    loginBox.style.display="none";
-    app.style.display="block";
-  }else{
-    alert("Sandi salah!");
-  }
-}
-
-function togglePassword(){
-  if(password.type==="password"){
-    password.type="text";
-    eyeIcon.innerText="🙈";
-  }else{
-    password.type="password";
-    eyeIcon.innerText="👁️";
-  }
-}
-
-if(sessionStorage.getItem("login")==="1"){
-  loginBox.style.display="none";
-  app.style.display="block";
-}
-
 /* ================= PASARAN ================= */
 let presetIndex=0;
-
 function togglePreset(){
   let on=presetMode.value==="on";
   presetBox.style.display=on?"block":"none";
   manualPasaran.style.display=on?"none":"block";
 }
-
 function getPasaran(){
   if(presetMode.value==="off") return pasaranManual.value;
   let list=customPreset.value.split(",").map(x=>x.trim()).filter(Boolean);
@@ -213,10 +105,8 @@ function toggleManual(){
 function rand(min,max){
   return Math.floor(Math.random()*(max-min+1))+min;
 }
-
 function isTwin(n){return /^(\d)\1+$/.test(n);}
 function isStrictNonTwin(n){return new Set(n).size===n.length;}
-
 function genNum(len,filter){
   for(let i=0;i<1000;i++){
     let n="";
@@ -228,7 +118,6 @@ function genNum(len,filter){
   }
   return "0".repeat(len);
 }
-
 function genSet(len,count,filter){
   let s=new Set();
   while(s.size<count) s.add(genNum(len,filter));
@@ -252,17 +141,15 @@ function makeRow(label,len,line,nom){
   };
 }
 
-/* ================= GENERATE (TIDAK DIUBAH HASILNYA) ================= */
+/* ================= GENERATE ================= */
 function generate(){
   let per = periode.value.trim();
   if(per === "" || per === "0000"){
     alert("Periode belum diganti, cek lagi Kampang!");
     return;
   }
-
   let pas = getPasaran();
   let rows = [], total = 0;
-
   if(mode.value === "auto"){
     let max = +maxTotal.value;
     for(let i=0;i<1000;i++){
@@ -282,7 +169,6 @@ function generate(){
     total = r4.total + r3.total + r2.total;
     rows = [r4.html, r3.html, r2.html];
   }
-
   output.value = `
 <div class="panel-">
 <h4 class="color-white">
@@ -307,7 +193,6 @@ ${rows.join("")}
 function copyHTML(){
   navigator.clipboard.writeText(output.value);
 }
-
 function formatMaxTotal(){
   let v=parseInt(maxTotal.value)||5000;
   if(v<5000)v=5000;
@@ -317,7 +202,5 @@ function formatMaxTotal(){
 togglePreset();
 toggleManual();
 </script>
-
 </body>
 </html>
-
